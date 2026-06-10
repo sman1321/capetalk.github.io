@@ -97,6 +97,16 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .rule{display:flex;gap:8px;font-size:0.8rem;color:var(--text-dim);line-height:1.4}
 .rule-num{font-family:var(--mono);font-size:0.68rem;color:var(--indigo-glow);flex-shrink:0;margin-top:1px}
 
+/* ── BOARDS ── */
+.board-nav{display:flex;flex-direction:column;gap:1px}
+.board-btn{font-family:var(--sans);font-size:0.83rem;padding:7px 10px;border-radius:4px;border:none;background:transparent;color:var(--text-dim);cursor:pointer;text-align:left;width:100%;transition:background 0.1s,color 0.1s;display:flex;justify-content:space-between;align-items:center}
+.board-btn:hover{background:var(--panel);color:var(--text)}
+.board-btn.active{background:var(--panel);color:var(--text);border-left:2px solid var(--indigo-glow);padding-left:8px}
+.board-btn .board-count{font-family:var(--mono);font-size:0.68rem;color:var(--muted)}
+.board-tag{font-family:var(--mono);font-size:0.6rem;padding:1px 6px;border-radius:3px;border:1px solid var(--border-hi);color:var(--muted);margin-left:6px;flex-shrink:0}
+.current-board-label{font-family:var(--mono);font-size:0.68rem;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.current-board-label strong{color:var(--indigo-glow)}
+
 /* ── WIKI ── */
 .wiki-layout{display:grid;grid-template-columns:220px 1fr;gap:20px}
 @media(max-width:800px){.wiki-layout{grid-template-columns:1fr}.wiki-nav-panel{display:none}}
@@ -287,6 +297,7 @@ select{appearance:none;cursor:pointer}
 <div class="page active" id="page-forum">
   <div class="forum-layout">
     <main>
+      <div class="current-board-label">Board: <strong id="currentBoardLabel">All Posts</strong></div>
       <div class="feed-controls">
         <button class="sort-btn active" onclick="setForumSort('new',this)">new</button>
         <button class="sort-btn" onclick="setForumSort('top',this)">top</button>
@@ -303,6 +314,37 @@ select{appearance:none;cursor:pointer}
           <div class="stat-grid">
             <div class="stat-item"><div class="stat-val" id="statPosts">—</div><div class="stat-lbl">Posts</div></div>
             <div class="stat-item"><div class="stat-val" id="statArticles">—</div><div class="stat-lbl">Articles</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="widget">
+        <div class="widget-header"><div class="widget-title">Boards</div></div>
+        <div class="widget-body" style="padding:8px 10px">
+          <div class="board-nav">
+            <button class="board-btn active" id="bb-all" onclick="switchBoard(null,this)">
+              <span>All Posts</span><span class="board-count" id="bc-all">—</span>
+            </button>
+            <button class="board-btn" id="bb-General" onclick="switchBoard('General',this)">
+              <span>General</span><span class="board-count" id="bc-General">—</span>
+            </button>
+            <button class="board-btn" id="bb-Panacea" onclick="switchBoard('Panacea',this)">
+              <span>Panacea</span><span class="board-count" id="bc-Panacea">—</span>
+            </button>
+            <button class="board-btn" id="bb-Victoria" onclick="switchBoard('Victoria',this)">
+              <span>Victoria</span><span class="board-count" id="bc-Victoria">—</span>
+            </button>
+            <button class="board-btn" id="bb-BSR" onclick="switchBoard('BSR',this)">
+              <span>BSR <span class="board-tag">gov</span></span><span class="board-count" id="bc-BSR">—</span>
+            </button>
+            <button class="board-btn" id="bb-DPA" onclick="switchBoard('DPA',this)">
+              <span>DPA <span class="board-tag">gov</span></span><span class="board-count" id="bc-DPA">—</span>
+            </button>
+            <button class="board-btn" id="bb-Victoria Foundation" onclick="switchBoard('Victoria Foundation',this)">
+              <span>Victoria Foundation</span><span class="board-count" id="bc-Victoria Foundation">—</span>
+            </button>
+            <button class="board-btn" id="bb-PCF" onclick="switchBoard('PCF',this)">
+              <span>PCF</span><span class="board-count" id="bc-PCF">—</span>
+            </button>
           </div>
         </div>
       </div>
@@ -475,10 +517,22 @@ select{appearance:none;cursor:pointer}
       <button class="modal-close" onclick="closeModal('forumModal')">×</button>
     </div>
     <div class="modal-body">
-      <div class="form-row-2">
+      <div class="form-row-3">
         <div>
           <label class="form-label" for="fHandle">Handle</label>
           <input type="text" id="fHandle" placeholder="u/handle or Anonymous" maxlength="40"/>
+        </div>
+        <div>
+          <label class="form-label" for="fBoard">Board</label>
+          <select id="fBoard">
+            <option value="General">General</option>
+            <option value="Panacea">Panacea</option>
+            <option value="Victoria">Victoria</option>
+            <option value="BSR">BSR</option>
+            <option value="DPA">DPA</option>
+            <option value="Victoria Foundation">Victoria Foundation</option>
+            <option value="PCF">PCF</option>
+          </select>
         </div>
         <div>
           <label class="form-label" for="fFlair">Flair</label>
@@ -658,11 +712,13 @@ const H = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'
 
 // ── STATE ────────────────────────────────────────────
 let allPosts = [], allArticles = [];
-let forumSort = 'new', forumFlair = null;
+let forumSort = 'new', forumFlair = null, forumBoard = null;
 let wikiAff = null, wikiSearch = '';
 let currentArticleId = null;
 let votes = JSON.parse(localStorage.getItem('ct_votes2')||'{}');
 function saveVotes(){ localStorage.setItem('ct_votes2', JSON.stringify(votes)); }
+
+const BOARDS = ['General','Panacea','Victoria','BSR','DPA','Victoria Foundation','PCF'];
 
 // ── PAGE ROUTING ─────────────────────────────────────
 function showPage(p) {
@@ -719,14 +775,37 @@ async function loadPosts(){
 
 function updateForumStats(){
   document.getElementById('statPosts').textContent=allPosts.length.toLocaleString();
+  // flair counts (scoped to current board)
+  const visiblePosts = forumBoard ? allPosts.filter(p=>p.board===forumBoard) : allPosts;
   const counts={};
-  allPosts.forEach(p=>{ counts[p.flair]=(counts[p.flair]||0)+1; });
-  document.getElementById('fc-all').textContent=allPosts.length.toLocaleString();
+  visiblePosts.forEach(p=>{ counts[p.flair]=(counts[p.flair]||0)+1; });
+  document.getElementById('fc-all').textContent=visiblePosts.length.toLocaleString();
   Object.entries(flairCountIds).forEach(([f,id])=>{ document.getElementById(id).textContent=(counts[f]||0).toLocaleString(); });
+  // board counts
+  document.getElementById('bc-all').textContent=allPosts.length.toLocaleString();
+  BOARDS.forEach(b=>{
+    const el=document.getElementById('bc-'+b);
+    if(el) el.textContent=allPosts.filter(p=>p.board===b).length.toLocaleString();
+  });
+}
+
+function switchBoard(board, btn){
+  forumBoard = board;
+  forumFlair = null;
+  document.querySelectorAll('.board-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const label = board || 'All Posts';
+  document.getElementById('currentBoardLabel').textContent = label;
+  // pre-select the board in the new post modal
+  const sel = document.getElementById('fBoard');
+  if(board && sel) sel.value = board;
+  updateForumStats();
+  renderForum();
 }
 
 function getForumFiltered(){
   return allPosts.filter(p=>{
+    if(forumBoard && p.board!==forumBoard) return false;
     if(forumFlair && p.flair!==forumFlair) return false;
     return true;
   });
@@ -750,14 +829,15 @@ function renderForum(){
     const dnStyle=vd===-1?'color:var(--indigo-glow)':'';
     const bp=p.body?`<div class="post-body-preview">${esc(p.body)}</div>`:'';
     const handle=p.handle?(p.handle.startsWith('u/')?p.handle:'u/'+p.handle):'u/Anonymous';
+    const boardChip=(!forumBoard&&p.board)?`<span class="board-tag" style="margin-left:0">${esc(p.board)}</span>`:''
     return `<div class="post-card" id="pc-${p.id}">
       <div class="vote-col">
-        <button class="vote-btn up" style="${upStyle}" onclick="votePost('${p.id}',1)">▲</button>
+        <button class="vote-btn up" style="${upStyle}" onclick="votePost('${p.id}',1);event.stopPropagation()">▲</button>
         <span class="vote-count" id="pvc-${p.id}">${fmt(p.votes||0)}</span>
-        <button class="vote-btn down" style="${dnStyle}" onclick="votePost('${p.id}',-1)">▼</button>
+        <button class="vote-btn down" style="${dnStyle}" onclick="votePost('${p.id}',-1);event.stopPropagation()">▼</button>
       </div>
       <div class="post-content">
-        <div class="post-top"><span class="flair ${fc}">${esc(p.flair||'Meta')}</span></div>
+        <div class="post-top">${boardChip}<span class="flair ${fc}">${esc(p.flair||'Meta')}</span></div>
         <div class="post-title">${esc(p.title)}</div>
         ${bp}
         <div class="post-meta"><span class="author">${esc(handle)}</span><span>${timeAgo(p.created_at)}</span></div>
@@ -799,6 +879,7 @@ function filterForumFlair(f){ forumFlair=f; renderForum(); }
 
 async function submitForumPost(){
   const handle=document.getElementById('fHandle').value.trim()||'Anonymous';
+  const board=document.getElementById('fBoard').value||'General';
   const flair=document.getElementById('fFlair').value||'Meta';
   const title=document.getElementById('fTitle').value.trim();
   const body=document.getElementById('fBody').value.trim();
@@ -808,7 +889,7 @@ async function submitForumPost(){
   if(!title){ document.getElementById('fTitle').style.borderColor='var(--red)'; setTimeout(()=>document.getElementById('fTitle').style.borderColor='',1500); return; }
   btn.disabled=true; btn.textContent='Posting...';
   try{
-    const r=await fetch(`${SUPA_URL}/rest/v1/posts`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({handle,flair,title,body:body||null,votes:1})});
+    const r=await fetch(`${SUPA_URL}/rest/v1/posts`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify({handle,board,flair,title,body:body||null,votes:1})});
     if(!r.ok) throw new Error();
     const [np]=await r.json();
     votes['fp_'+np.id]=1; saveVotes();
@@ -1067,6 +1148,9 @@ function openThread(postId) {
   document.getElementById('page-forum').classList.remove('active');
   const tv = document.getElementById('postThreadView');
   tv.classList.add('active');
+  // update back button label with board name
+  const boardLabel = p.board ? p.board : 'forum';
+  document.querySelector('.thread-back').textContent = '← back to ' + boardLabel;
 
   // render the post in full at the top
   const fc = flairClassMap[p.flair] || 'flair-meta';
