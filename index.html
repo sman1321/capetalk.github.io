@@ -21,7 +21,7 @@ body{font-family:var(--sans);background:var(--void);color:var(--text);min-height
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:50}
 .header-inner{max-width:1200px;margin:0 auto;height:54px;display:flex;align-items:center;gap:20px}
 .logo-area{display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none}
-.logo-img{height:36px;width:auto;display:logo.png}
+.logo-img{height:36px;width:auto;display:}
 .logo-placeholder{height:36px;width:36px;background:var(--card);border:1px dashed var(--border-hi);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.55rem;color:var(--muted);text-align:center;line-height:1.2;flex-shrink:0}
 .site-name{font-family:var(--sans);font-size:1.15rem;font-weight:600;color:var(--text);letter-spacing:-0.3px}
 .site-name span{color:var(--indigo-glow)}
@@ -848,7 +848,7 @@ select{appearance:none;cursor:pointer}
 <header>
   <div class="header-inner">
     <a class="logo-area" href="#" onclick="showPage('forum');return false;">
-      <div class="logo-placeholder" id="logoPlaceholder">LOGO</div>
+      <img class="logo-img" src="logo.png" alt="Capetalk">
       <!-- To use your own logo, replace the div above with:
            <img class="logo-img" id="logoImg" src="your-logo.png" alt="Capetalk"> -->
       <span class="site-name">Cape<span>talk</span></span>
